@@ -39,8 +39,10 @@ class moviePipeline(object):
                 score,
                 movie_type,
                 resolution,
-                main_actor
-              ) values ( %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                main_actor,
+                description,
+                download
+              ) values ( %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
               '''
         conn.execute(sql, ( 
                 item['en_name'],
@@ -54,5 +56,7 @@ class moviePipeline(object):
                 item['score'],
                 item['movie_type'],
                 item['resolution'],
-                item['main_actor'],)
+                item['main_actor'],
+                item['description'],
+                item['download'],)
             )

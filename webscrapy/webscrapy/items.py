@@ -24,6 +24,8 @@ class movieItem(scrapy.Item):
     main_actor = scrapy.Field() # 主演
     add_time = scrapy.Field()  # 添加时间
     subtitle = scrapy.Field()  # 字幕
-    country = scrapy.Field()
-    score = scrapy.Field()
+    country = scrapy.Field()  # 国家
+    score = scrapy.Field()   # 分数
+    download = scrapy.Field() # 下载地址
+    description = scrapy.Field() # 简介
     pass

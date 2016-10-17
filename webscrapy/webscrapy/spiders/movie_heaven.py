@@ -34,6 +34,8 @@ class MvHeavenSpider(scrapy.Spider):
         elif key == u'导演':  item['director'] = value.split(u' ', 1)[0]
         elif key == u'主演':  
             item['main_actor'] = ','.join([people.split(u' ', 1)[0] for people in value.split(u',')])
+        elif key == u'简介':     item['description'] = value.strip()
+        elif key == u'下载地址': item['download'] = value.strip()
 
     def parse_detail(self, response):
         '''
@@ -65,8 +67,14 @@ class MvHeavenSpider(scrapy.Spider):
             else:
                 if key == u'主演':
                     value += u','+clear_info
+                elif u'下载' in clear_info:
+                    key = u'下载地址'
+                    value = ''
                 else:
                     value = clear_info
+       
+        # assign download url to item
+        self.value_assign(item, key, value)
 
         yield item
            
