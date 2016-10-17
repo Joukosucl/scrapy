@@ -1,0 +1,95 @@
+# coding:utf8
+
+import scrapy
+from webscrapy.items import movieItem
+from scrapy.http import Request
+
+import re
+
+class MvHeavenSpider(scrapy.Spider):
+    name = "mvheaven"
+
+    start_urls = [
+        "http://www.dytt8.net/html/gndy/rihan/index.html", # japan, korea
+        #"http://www.ygdy8.net/html/gndy/dyzz/index.html", # new
+        #"http://www.ygdy8.net/html/gndy/china/index.html", # inner
+        #"http://www.ygdy8.net/html/gndy/oumei/index.html"  # europe
+    ] 
+
+    url_head = 'http://www.dytt8.net/'
+
+    def value_assign(self, item, key, value):
+        
+        value = value.encode('utf8')
+
+        if key == u'译名':      item['zh_name'] = value
+        elif key == u'片名': item['en_name'] = value 
+        elif key == u'年代': item['movie_time'] = value
+        elif key == u'国家': item['country'] = value    
+        elif key == u'类别': item['movie_type'] = value.replace('/',',')
+        elif key == u'语言': item['language'] = value
+        elif key == u'字幕': item['subtitle'] = value
+        elif key == u'IMDb评分': item['score'] = value
+        elif key == u'文件格式': item['file_type'] = value
+        elif key == u'视频尺寸': item['resolution'] = value.replace(' ','')
+        elif key == u'片长':  item['movie_length'] = value.replace('分钟','')
+        elif key == u'导演':  item['director'] = value.split(' ', 1)[0]
+        elif key == u'主演':  
+            item['main_actor'] = ','.join([people.split(' ', 1)[0] for people in value.split(',')])
+
+    def parse_detail(self, response):
+        '''
+        parse detail movie info and send into items
+        '''
+        # init item object
+        item = movieItem()
+
+        infos = response.xpath('//div[@id="Zoom"]//text()').extract()
+
+        key, value = '', ''
+        
+        for info in infos:
+            clear_info = info.strip().replace(u'　　','')
+
+            # continue if info is blank
+            if not clear_info:
+                continue
+
+            # assign the last value into item instance
+            self.value_assign(item, key, value)
+
+            if u'◎' in clear_info:
+                result = re.split(u'　| ', clear_info.replace(u'◎' ,''), maxsplit=1)
+                if len(result) > 1:
+                    key, value = result
+                else:
+                    key = result[0]
+            else:
+                if key == u'主演':
+                    value += ','+clear_info
+                else:
+                    value = clear_info
+
+        yield item
+           
+                
+
+    def parse(self, response):
+        '''
+        parse the page
+        '''
+
+        # parse the list
+        movies = response.xpath('//table[@class="tbspan"]')
+        
+        for source in movies:
+            link = source.xpath('.//a[@class="ulink"][last()]/@href').extract()[0]
+            add_time = source.xpath('.//font/text()').extract()[0]
+            add_time = add_time.split(u'：')[1].split('\n')[0]
+           
+            print link
+            yield scrapy.Request(self.url_head + link, callback = self.parse_detail)
+            break
+
+        
+        
