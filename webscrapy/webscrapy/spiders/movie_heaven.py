@@ -18,12 +18,31 @@ class MvHeavenSpider(scrapy.Spider):
 
     url_head = 'http://www.dytt8.net/'
 
+    # init item object
+    item = movieItem()
+    item['zh_name'] = ''
+    item['en_name'] = ''
+    item['movie_time'] = ''
+    item['language'] = ''
+    item['file_type'] = ''
+    item['movie_type'] = ''
+    item['resolution'] = ''
+    item['movie_length'] = ''
+    item['director'] = ''
+    item['main_actor'] = ''
+    item['add_time'] = ''
+    item['subtitle'] = ''
+    item['country'] = ''
+    item['score'] = ''
+    item['download'] = ''
+    item['description'] = ''
+
     def value_assign(self, item, key, value):
         
         if key == u'译名':      item['zh_name'] = value
         elif key == u'片名': item['en_name'] = value 
         elif key == u'年代': item['movie_time'] = value
-        elif key == u'国家': item['country'] = value    
+        elif key in (u'国家',u'地区'): item['country'] = value    
         elif key == u'类别': item['movie_type'] = value.replace(u'/',u',')
         elif key == u'语言': item['language'] = value
         elif key == u'字幕': item['subtitle'] = value
@@ -41,8 +60,6 @@ class MvHeavenSpider(scrapy.Spider):
         '''
         parse detail movie info and send into items
         '''
-        # init item object
-        item = movieItem()
 
         infos = response.xpath('//div[@id="Zoom"]//text()').extract()
 
@@ -56,7 +73,7 @@ class MvHeavenSpider(scrapy.Spider):
                 continue
 
             # assign the last value into item instance
-            self.value_assign(item, key, value)
+            self.value_assign(self.item, key, value)
 
             if u'◎' in clear_info:
                 result = re.split(u'　| ', clear_info.replace(u'◎' ,u''), maxsplit=1)
@@ -74,9 +91,9 @@ class MvHeavenSpider(scrapy.Spider):
                     value = clear_info
        
         # assign download url to item
-        self.value_assign(item, key, value)
+        self.value_assign(self.item, key, value)
 
-        yield item
+        yield self.item
            
                 
 
@@ -84,6 +101,11 @@ class MvHeavenSpider(scrapy.Spider):
         '''
         parse the page
         '''
+
+        # determin the url of the next page
+        next_page = response.xpath('//a[text()="%s"]/@href' % u'下一页').extract()
+        pos = response.url.rfind(u'/',1)
+        next_url = response.url[:pos+1] + next_page[0]
 
         # parse the list
         movies = response.xpath('//table[@class="tbspan"]')
@@ -93,9 +115,9 @@ class MvHeavenSpider(scrapy.Spider):
             add_time = source.xpath('.//font/text()').extract()[0]
             add_time = add_time.split(u'：')[1].split(u'\n')[0]
            
-            print link
+            #print self.url_head + link
             yield scrapy.Request(self.url_head + link, callback = self.parse_detail)
-            break
 
-        
-        
+        if next_page:
+            yield scrapy.Request(next_url, callback = self.parse)
+                
