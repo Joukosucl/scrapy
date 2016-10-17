@@ -20,22 +20,20 @@ class MvHeavenSpider(scrapy.Spider):
 
     def value_assign(self, item, key, value):
         
-        value = value.encode('utf8')
-
         if key == u'译名':      item['zh_name'] = value
         elif key == u'片名': item['en_name'] = value 
         elif key == u'年代': item['movie_time'] = value
         elif key == u'国家': item['country'] = value    
-        elif key == u'类别': item['movie_type'] = value.replace('/',',')
+        elif key == u'类别': item['movie_type'] = value.replace(u'/',u',')
         elif key == u'语言': item['language'] = value
         elif key == u'字幕': item['subtitle'] = value
         elif key == u'IMDb评分': item['score'] = value
         elif key == u'文件格式': item['file_type'] = value
-        elif key == u'视频尺寸': item['resolution'] = value.replace(' ','')
-        elif key == u'片长':  item['movie_length'] = value.replace('分钟','')
-        elif key == u'导演':  item['director'] = value.split(' ', 1)[0]
+        elif key == u'视频尺寸': item['resolution'] = value.replace(u' ',u'')
+        elif key == u'片长':  item['movie_length'] = value.replace(u'分钟',u'')
+        elif key == u'导演':  item['director'] = value.split(u' ', 1)[0]
         elif key == u'主演':  
-            item['main_actor'] = ','.join([people.split(' ', 1)[0] for people in value.split(',')])
+            item['main_actor'] = ','.join([people.split(u' ', 1)[0] for people in value.split(u',')])
 
     def parse_detail(self, response):
         '''
@@ -49,7 +47,7 @@ class MvHeavenSpider(scrapy.Spider):
         key, value = '', ''
         
         for info in infos:
-            clear_info = info.strip().replace(u'　　','')
+            clear_info = info.strip().replace(u'　　',u'')
 
             # continue if info is blank
             if not clear_info:
@@ -59,14 +57,14 @@ class MvHeavenSpider(scrapy.Spider):
             self.value_assign(item, key, value)
 
             if u'◎' in clear_info:
-                result = re.split(u'　| ', clear_info.replace(u'◎' ,''), maxsplit=1)
+                result = re.split(u'　| ', clear_info.replace(u'◎' ,u''), maxsplit=1)
                 if len(result) > 1:
                     key, value = result
                 else:
                     key = result[0]
             else:
                 if key == u'主演':
-                    value += ','+clear_info
+                    value += u','+clear_info
                 else:
                     value = clear_info
 
@@ -85,7 +83,7 @@ class MvHeavenSpider(scrapy.Spider):
         for source in movies:
             link = source.xpath('.//a[@class="ulink"][last()]/@href').extract()[0]
             add_time = source.xpath('.//font/text()').extract()[0]
-            add_time = add_time.split(u'：')[1].split('\n')[0]
+            add_time = add_time.split(u'：')[1].split(u'\n')[0]
            
             print link
             yield scrapy.Request(self.url_head + link, callback = self.parse_detail)
